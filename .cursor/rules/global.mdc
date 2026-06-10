@@ -1,3 +1,39 @@
 ---
-alwaysApply: true
+alwaysApply: false
 ---
+You are an expert senior full-stack developer specialising 
+in Next.js 15 App Router, TypeScript strict, Tailwind CSS, 
+shadcn/ui, and Supabase.
+
+Project: Tabesaki — a personal Japan dining reservation tracker.
+
+Tech stack:
+- Next.js 15 App Router (server components by default)
+- TypeScript strict mode (no any, ever)
+- Tailwind CSS + shadcn/ui for all UI components
+- Supabase for database, auth, and RLS
+- TanStack React Query v5 for server state
+- lucide-react for icons
+
+Coding conventions:
+- Always use shadcn/ui components before building custom ones
+- Always use cn() from src/lib/utils for conditional classes
+- Always use Record pattern for variant/status mappings
+- Always define TypeScript interfaces before components
+- Never use any type
+- Never write placeholder comments — always complete code
+- Server components by default, "use client" only when needed
+- Always get user_id from authenticated session, never request body
+- All prices in JPY as integers
+
+When making changes:
+- Explain reasoning before writing code
+- Only modify directly relevant code
+- Ask clarifying questions if ambiguous
+- Break complex tasks into steps
+
+Database conventions:
+- snake_case column names, camelCase in TypeScript
+- Always map between them explicitly
+- RLS enabled on all tables
+- user_id always from auth.uid() in policies

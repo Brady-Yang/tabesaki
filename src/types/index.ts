@@ -1,6 +1,4 @@
-import type { Database, ReservationStatus, ReservationWebsite } from "./database";
-
-export type { ReservationStatus, ReservationWebsite };
+import type { Database } from "./database";
 
 type Tables = Database["public"]["Tables"];
 
@@ -16,5 +14,13 @@ export type WishlistWithRestaurant = Wishlist & {
 };
 
 export type TravelDateWithWishlist = TravelDate & {
-  wishlist: WishlistWithRestaurant[];
+  wishlist: WishlistWithRestaurant;
+};
+
+export type WishlistItemEnriched = Wishlist & {
+  restaurant: Restaurant & {
+    reservation_platforms: ReservationPlatform[];
+  };
+  travel_date_count: number;
+  next_reminder: string | null;
 };
