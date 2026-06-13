@@ -1,15 +1,25 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import type { WishlistItemEnriched } from "@/types/index";
+import type { WishlistFilters, WishlistItemEnriched } from "@/types/index";
 
-export function useWishlist() {
+export function useWishlist(filters: WishlistFilters = {}) {
   const qc = useQueryClient();
 
   const query = useQuery({
-    queryKey: ["wishlist"],
+    queryKey: ["wishlist", filters],
     queryFn: async () => {
-      const res = await fetch("/api/wishlist");
+      const params = new URLSearchParams();
+      if (filters.sort) params.set("sort", filters.sort);
+      if (filters.order) params.set("order", filters.order);
+      if (filters.filter_status) params.set("filter_status", filters.filter_status);
+      if (filters.filter_cuisine) params.set("filter_cuisine", filters.filter_cuisine);
+      if (filters.filter_price_max != null)
+        params.set("filter_price_max", String(filters.filter_price_max));
+      if (filters.search) params.set("search", filters.search);
+
+      const qs = params.toString();
+      const res = await fetch(`/api/wishlist${qs ? `?${qs}` : ""}`);
       if (!res.ok) throw new Error("Failed to fetch wishlist");
       const data = await res.json();
       return data.items as WishlistItemEnriched[];
@@ -38,14 +48,14 @@ export function useWishlist() {
     },
     onMutate: async (id) => {
       await qc.cancelQueries({ queryKey: ["wishlist"] });
-      const prev = qc.getQueryData<WishlistItemEnriched[]>(["wishlist"]);
-      qc.setQueryData<WishlistItemEnriched[]>(["wishlist"], (old) =>
+      const prev = qc.getQueryData<WishlistItemEnriched[]>(["wishlist", filters]);
+      qc.setQueryData<WishlistItemEnriched[]>(["wishlist", filters], (old) =>
         old?.filter((item) => item.id !== id)
       );
       return { prev };
     },
     onError: (_err, _id, ctx) => {
-      if (ctx?.prev) qc.setQueryData(["wishlist"], ctx.prev);
+      if (ctx?.prev) qc.setQueryData(["wishlist", filters], ctx.prev);
     },
     onSettled: () => qc.invalidateQueries({ queryKey: ["wishlist"] }),
   });
@@ -68,14 +78,14 @@ export function useWishlist() {
     },
     onMutate: async ({ id, notes }) => {
       await qc.cancelQueries({ queryKey: ["wishlist"] });
-      const prev = qc.getQueryData<WishlistItemEnriched[]>(["wishlist"]);
-      qc.setQueryData<WishlistItemEnriched[]>(["wishlist"], (old) =>
+      const prev = qc.getQueryData<WishlistItemEnriched[]>(["wishlist", filters]);
+      qc.setQueryData<WishlistItemEnriched[]>(["wishlist", filters], (old) =>
         old?.map((item) => (item.id === id ? { ...item, notes } : item))
       );
       return { prev };
     },
     onError: (_err, _vars, ctx) => {
-      if (ctx?.prev) qc.setQueryData(["wishlist"], ctx.prev);
+      if (ctx?.prev) qc.setQueryData(["wishlist", filters], ctx.prev);
     },
     onSettled: () => qc.invalidateQueries({ queryKey: ["wishlist"] }),
   });

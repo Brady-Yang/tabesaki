@@ -5,20 +5,28 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { WishlistCard } from "@/components/WishlistCard";
 import { WishlistDetail } from "@/components/WishlistDetail";
+import { WishlistToolbar } from "@/components/WishlistToolbar";
+import { UrgencyBanner } from "@/components/UrgencyBanner";
 import { useWishlist } from "@/hooks/useWishlist";
-import type { WishlistItemEnriched } from "@/types/index";
+import type { WishlistFilters, WishlistItemEnriched } from "@/types/index";
 import { Plus } from "lucide-react";
 
 function SkeletonCard() {
   return (
-    <div className="h-28 w-full animate-pulse rounded-2xl border bg-zinc-100 dark:bg-zinc-800" />
+    <div className="h-36 w-full animate-pulse rounded-2xl border bg-zinc-100 dark:bg-zinc-800" />
   );
 }
 
 export default function WishlistPage() {
-  const { query, removeFromWishlist, updateNotes } = useWishlist();
-  const [selectedItem, setSelectedItem] =
-    useState<WishlistItemEnriched | null>(null);
+  const [filters, setFilters] = useState<WishlistFilters>({
+    sort: "reminder_date",
+    order: "asc",
+  });
+
+  const { query, removeFromWishlist, updateNotes } = useWishlist(filters);
+  const [selectedItem, setSelectedItem] = useState<WishlistItemEnriched | null>(
+    null
+  );
   const [detailOpen, setDetailOpen] = useState(false);
 
   const { data: items, isLoading, isError } = query;
@@ -41,17 +49,31 @@ export default function WishlistPage() {
     updateNotes.mutate({ id, notes });
   }
 
-  // Keep detail item in sync with latest data
   const liveItem =
     selectedItem && items
       ? (items.find((i) => i.id === selectedItem.id) ?? selectedItem)
       : selectedItem;
 
+  const hasActiveFilters =
+    !!filters.filter_status ||
+    !!filters.filter_cuisine ||
+    filters.filter_price_max != null ||
+    !!filters.search;
+
   return (
     <div>
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold tracking-tight">My Wishlist</h1>
-        <Button asChild size="sm">
+      {/* Header */}
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">My Wishlist</h1>
+          {!isLoading && items != null && (
+            <p className="mt-0.5 text-sm text-muted-foreground">
+              {items.length} restaurant{items.length !== 1 ? "s" : ""}
+              {hasActiveFilters && " matching filters"}
+            </p>
+          )}
+        </div>
+        <Button asChild size="sm" className="min-h-[44px]">
           <Link href="/restaurants/add">
             <Plus className="mr-1.5 h-4 w-4" />
             Add
@@ -59,6 +81,19 @@ export default function WishlistPage() {
         </Button>
       </div>
 
+      {/* Toolbar */}
+      <div className="mt-4">
+        <WishlistToolbar filters={filters} onChange={setFilters} />
+      </div>
+
+      {/* Urgency banner */}
+      {items && items.length > 0 && (
+        <div className="mt-4">
+          <UrgencyBanner items={items} />
+        </div>
+      )}
+
+      {/* Loading state */}
       {isLoading && (
         <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
           {[1, 2, 3, 4].map((i) => (
@@ -67,23 +102,34 @@ export default function WishlistPage() {
         </div>
       )}
 
+      {/* Error state */}
       {isError && (
         <p className="mt-8 text-sm text-destructive">
           Failed to load wishlist. Please refresh.
         </p>
       )}
 
+      {/* Empty state */}
       {!isLoading && !isError && items?.length === 0 && (
         <div className="mt-16 flex flex-col items-center gap-4 text-center">
-          <p className="text-sm text-muted-foreground">
-            Add your first restaurant to get started
-          </p>
-          <Button asChild>
-            <Link href="/restaurants/add">Add Restaurant</Link>
-          </Button>
+          {hasActiveFilters ? (
+            <p className="text-sm text-muted-foreground">
+              No restaurants match your filters.
+            </p>
+          ) : (
+            <>
+              <p className="text-sm text-muted-foreground">
+                Add your first restaurant to get started.
+              </p>
+              <Button asChild>
+                <Link href="/restaurants/add">Add Restaurant</Link>
+              </Button>
+            </>
+          )}
         </div>
       )}
 
+      {/* List */}
       {!isLoading && items && items.length > 0 && (
         <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
           {items.map((item) => (
